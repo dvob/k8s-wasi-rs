@@ -1,9 +1,9 @@
 mod k8s;
 
-use std::error::Error;
 use k8s::Authenticator;
-use k8s_openapi::api::{authentication::v1::{TokenReview, UserInfo, TokenReviewStatus}};
-use serde::{Serialize, Deserialize};
+use k8s_openapi::api::authentication::v1::{TokenReview, TokenReviewStatus, UserInfo};
+use serde::{Deserialize, Serialize};
+use std::error::Error;
 
 register_authenticator!(MyAuth);
 
@@ -25,7 +25,10 @@ impl k8s::Authenticator<()> for MyAuth {
 pub struct TestAuthenticator {}
 
 impl k8s::Authenticator<Option<Settings>> for TestAuthenticator {
-    fn authenticate(tr: TokenReview, settings: Option<Settings>) -> Result<TokenReview, Box<dyn Error>> {
+    fn authenticate(
+        tr: TokenReview,
+        settings: Option<Settings>,
+    ) -> Result<TokenReview, Box<dyn Error>> {
         let token = match tr.spec.token {
             Some(token) => token,
             None => {
@@ -61,7 +64,6 @@ impl k8s::Authenticator<Option<Settings>> for TestAuthenticator {
 
         Ok(response)
     }
-
 }
 
 #[test]
@@ -77,7 +79,6 @@ fn test1() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn test3() -> Result<(), Box<dyn Error>> {
-
     let mut tr = TokenReview::default();
     tr.spec.token = Some("my-test-token1".to_string());
     let settings: Option<Settings> = None;
