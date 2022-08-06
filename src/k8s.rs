@@ -1,9 +1,12 @@
-use std::{io::{Write, self}, error::Error};
-use k8s_openapi::api::authentication::v1::*;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
+use k8s_openapi::api::authentication::v1::{TokenReview, UserInfo, TokenReviewStatus};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::{
+    error::Error,
+    io::{Read, Write},
+};
 
 trait Authenticator {
-   fn authenticate(tr: TokenReview) -> Result<TokenReview, Box<dyn Error>>;
+    fn authenticate(tr: TokenReview) -> Result<TokenReview, Box<dyn Error>>;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -15,20 +18,25 @@ struct Settings {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Request<T> {
-    request: TokenReview,
-    settings: T,
+struct Request<T, S> {
+    request: T,
+    settings: S,
 }
 
 #[derive(Serialize, Deserialize)]
-struct Response {
-    response: Option<TokenReview>,
+struct Response<T> {
+    response: Option<T>,
     error: Option<String>,
 }
 
-type AuthFn<T> = fn(tr: TokenReview, T) -> Result<TokenReview, Box<dyn Error>>;
+type RunFn<I, O, S> = fn(req: Request<I, S>) -> Result<O, Box<dyn Error>>;
 
-fn my_auth(tr: TokenReview, settings: Option<Settings>) -> Result<TokenReview, Box<dyn Error>> {
+//type AuthFn<T> = fn(tr: TokenReview, T) -> Result<TokenReview, Box<dyn Error>>;
+
+
+fn my_auth(req: Request<TokenReview, Option<Settings>>) -> Result<TokenReview, Box<dyn Error>> {
+    let tr = req.request;
+    let settings = req.settings;
     let token = match tr.spec.token {
         Some(token) => token,
         None => {
@@ -40,16 +48,16 @@ fn my_auth(tr: TokenReview, settings: Option<Settings>) -> Result<TokenReview, B
     let mut status = TokenReviewStatus::default();
 
     // get settings or use default values
-    let settings = settings.unwrap_or(Settings{
+    let settings = settings.unwrap_or(Settings {
         token: "my-test-token".to_string(),
         uid: "1337".to_string(),
         user: "my-user".to_string(),
-        groups: vec!["system:masters".to_string()]
+        groups: vec!["system:masters".to_string()],
     });
 
     if token == settings.token {
         status.authenticated = Some(true);
-        status.user = Some(UserInfo{
+        status.user = Some(UserInfo {
             username: Some(settings.user),
             uid: Some(settings.uid),
             groups: Some(settings.groups),
@@ -65,28 +73,44 @@ fn my_auth(tr: TokenReview, settings: Option<Settings>) -> Result<TokenReview, B
     Ok(response)
 }
 
-fn auth_wrapper<T: DeserializeOwned>(input: Box<dyn io::Read>, mut output: Box<dyn io::Write>, auth_fn: AuthFn<T>) -> Result<(), Box<dyn Error>> {
-    let req: Request<T> = serde_json::from_reader(input)?;
-
-    let resp = match auth_fn(req.request, req.settings) {
-        Ok(tr) => Response{
+fn raw_json_runner<I, O, S>(input: &[u8], run_fn: RunFn<I, O, S>) -> Result<Vec<u8>, Box<dyn Error>>
+where
+    I: DeserializeOwned,
+    S: DeserializeOwned,
+    O: Serialize,
+{
+    let req: Request<I, S> = serde_json::from_slice(input)?;
+    let resp = match run_fn(req) {
+        Ok(tr) => Response {
             response: Some(tr),
             error: None,
         },
-        Err(err) => Response{
+        Err(err) => Response {
             response: None,
             error: Some(err.to_string()),
-        }
+        },
     };
+    let output = serde_json::to_vec(&resp)?;
+    Ok(output)
+}
 
+fn stdin_out_wrapper<I, O, S>(run_fn: RunFn<I, O, S>) -> Result<(), Box<dyn Error>> 
+where
+    I: DeserializeOwned,
+    O: Serialize,
+    S: DeserializeOwned
+{
+    let mut input = Vec::new();
+    std::io::stdin().read_to_end(&mut input)?;
 
-    serde_json::to_writer(&mut output, &resp)?;
-    output.flush()?;
+    let output = raw_json_runner(input.as_slice(), run_fn)?;
+
+    std::io::stdout().write_all(&output)?;
+    std::io::stdout().flush()?;
     Ok(())
 }
 
-
 #[no_mangle]
 fn authn() {
-    auth_wrapper::<Option<Settings>>(Box::new(std::io::stdin()), Box::new(std::io::stdout()), my_auth).unwrap();
+    stdin_out_wrapper::<TokenReview, TokenReview, Option<Settings>>(my_auth).unwrap();
 }
