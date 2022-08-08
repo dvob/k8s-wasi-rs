@@ -58,9 +58,14 @@ where
         Self { run_fn: f }
     }
     pub fn raw_run(&self, input: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
-        let req: Request<I, S> = serde_json::from_slice(input)?;
-        let resp: Response<O> = (self.run_fn)(req.request, req.settings).into();
-        let output = serde_json::to_vec(&resp)?;
+        let response = match serde_json::from_slice::<Request<I, S>>(input) {
+            Err(err) => Response{
+                response: None,
+                error: Some(err.to_string()),
+            },
+            Ok(request) => (self.run_fn)(request.request, request.settings).into(),
+        };
+        let output = serde_json::to_vec(&response)?;
         Ok(output)
     }
 
