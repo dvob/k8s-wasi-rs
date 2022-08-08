@@ -7,3 +7,5 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+k8s_wasi = { path = "../../k8s_wasi" }
+k8s-openapi = { version = "0.15.0", features = ["v1_24"] }

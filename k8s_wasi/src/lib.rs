@@ -1,4 +1,12 @@
+pub mod admission;
+
+pub mod subject_access_review;
+
+pub mod token_review;
+
 use k8s_openapi::api::{authentication::v1::TokenReview, authorization::v1::SubjectAccessReview};
+use admission::AdmissionReview;
+
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
     error::Error,
@@ -81,7 +89,7 @@ pub trait Authenticator<S> {
 
 pub trait Authorizer<S> {
     fn authorize(
-        tr: SubjectAccessReview,
+        sar: SubjectAccessReview,
         settings: S,
     ) -> Result<SubjectAccessReview, Box<dyn Error>>;
 
@@ -94,9 +102,9 @@ pub trait Authorizer<S> {
 }
 
 pub trait Admiter<S> {
-    fn admit(tr: (), settings: S) -> Result<(), Box<dyn Error>>;
+    fn admit(ar: AdmissionReview, settings: S) -> Result<AdmissionReview, Box<dyn Error>>;
 
-    fn runner() -> RequestRunner<(), (), S>
+    fn runner() -> RequestRunner<AdmissionReview, AdmissionReview, S>
     where
         S: DeserializeOwned,
     {

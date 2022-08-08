@@ -1,8 +1,17 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+use k8s_wasi::Authorizer;
+use k8s_openapi::api::authorization::v1::SubjectAccessReview;
+use k8s_wasi::subject_access_review::*;
+
+struct MyAuthorizer {}
+
+impl Authorizer<()> for MyAuthorizer {
+    fn authorize(sar: SubjectAccessReview, _settings: ()) -> Result<SubjectAccessReview, Box<dyn std::error::Error>> {
+        let _spec = sar.spec;
+
+        // verfiy spec
+
+        Ok(response_from_status(allow()))
     }
 }
+
+k8s_wasi::register_authorizer!(MyAuthorizer);
