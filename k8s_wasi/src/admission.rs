@@ -104,7 +104,7 @@ impl AdmissionRequest {
 pub struct AdmissionResponse {
     pub uid: String,
     pub allowed: bool,
-    pub result: Option<Status>,
+    pub status: Option<Status>,
     pub patch: Option<String>,
     pub patch_type: Option<String>,
     pub audit_annotations: Option<BTreeMap<String, String>>,
@@ -116,7 +116,7 @@ impl AdmissionResponse {
         Self {
             uid,
             allowed,
-            result: None,
+            status: None,
             patch: None,
             patch_type: None,
             audit_annotations: None,
@@ -145,7 +145,7 @@ impl AdmissionResponse {
         let mut ar = Self::reject(uid);
         let mut result = Status::default();
         result.message = Some(message);
-        ar.result = Some(result);
+        ar.status = Some(result);
         ar
     }
 }
