@@ -30,9 +30,14 @@ Implement your module in `src/lib.rs`.
 Define a struct which represents your component and one which represent the settings if you expect settings.
 We must be able to deserialize the settings hence we use `#[derive(Deserialize)]` on the settings.
 ```rust
+use k8s_openapi::api::authentication::v1::TokenReview;
+use k8s_wasi::Authenticator;
+use serde::Deserialize;
+use std::error::Error;
+
 #[derive(Deserialize)]
 struct Settings {
-    my_setting: String
+    my_setting: String,
 }
 
 struct MyAuthenticator {}
@@ -46,7 +51,7 @@ Then implement the appropriate trait for your component:
 The traits are generic over the settings (`S`):
 ```rust
 impl Authenticator<Settings> for MyAuthenticator {
-    fn authenticate(tr: TokenReview, settings: Settings) -> Result<TokenReview, Box<dyn std::error::Error>> {
+    fn authenticate(tr: TokenReview, settings: Settings) -> Result<TokenReview, Box<dyn Error>> {
         todo!()
     }
 }
@@ -92,4 +97,90 @@ cargo build --release --target wasm32-wasi
 Then you can find the module in the target folder under:
 ```
 target/wasm32-wasi/release/my_k8s_authenticator.wasm
+```
+
+## Authentication
+The module `k8s_wasi::token_review` contains helper functions for the authentication:
+```
+use k8s_wasi::token_review::*;
+```
+
+### Input
+Read the token from the token review:
+```rust
+let token = get_token(tr)?;
+```
+
+### Output
+Authenticate with UID `0`, user `magic-user` and group `magic-group`:
+```rust
+response_from_status(
+	authenticate(
+		"0".to_string(),
+                "magic-user".to_string(),
+                vec![
+			"magic-group".to_string()
+		],
+	)
+)
+```
+
+Do not authenticate:
+```
+response_from_status(reject())
+```
+
+## Authorization
+The module `k8s_wasi::subject_access_review` contains helper functions to construct a `SubjectAccessReview` easily.
+```
+use k8s_wasi::subject_access_review::*;
+```
+
+### Output
+Authorize:
+```rust
+response_from_status(allow())
+```
+
+Do not authorize:
+```
+response_from_status(reject())
+```
+
+## Admission
+The module `k8s_wasi::admission` contains types and functions to construct a `AdmissionReview` easily.
+```
+use k8s_wasi::admission::*;
+```
+
+### Input
+Read the request:
+```rust
+let mut request = ar.get_request()?;
+```
+
+Read certain object from AdmissionReviewRequest:
+```rust
+use k8s_openapi::api::core::v1::ConfigMap;
+
+let config_map: ConfigMap = request.get_object()?;
+```
+
+### Output
+Accept request:
+```rust
+AdmissionReview::accept(request.uid)
+```
+
+Accept request and mutate object:
+```rust
+AdmissionReview::mutate(request.uid, config_map)
+```
+
+Reject request:
+```rust
+AdmissionReview::reject_with_message(
+	request.uid,
+	format!("reason for rejection")
+)
 ```
