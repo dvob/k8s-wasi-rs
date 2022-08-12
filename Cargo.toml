@@ -5,4 +5,8 @@ members = [
     "examples/my-authorizer",
     "examples/my-validator",
     "examples/my-mutator",
+    "examples/magic-authenticator",
+    "examples/magic-authorizer",
+    "examples/magic-validator",
+    "examples/magic-mutator",
 ]
