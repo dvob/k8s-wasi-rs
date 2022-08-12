@@ -101,7 +101,7 @@ target/wasm32-wasi/release/my_k8s_authenticator.wasm
 
 ## Authentication
 The module `k8s_wasi::token_review` contains helper functions for the authentication:
-```
+```rust
 use k8s_wasi::token_review::*;
 ```
 
@@ -126,13 +126,13 @@ response_from_status(
 ```
 
 Do not authenticate:
-```
+```rust
 response_from_status(reject())
 ```
 
 ## Authorization
 The module `k8s_wasi::subject_access_review` contains helper functions to construct a `SubjectAccessReview` easily.
-```
+```rust
 use k8s_wasi::subject_access_review::*;
 ```
 
@@ -143,13 +143,13 @@ response_from_status(allow())
 ```
 
 Do not authorize:
-```
+```rust
 response_from_status(reject())
 ```
 
 ## Admission
 The module `k8s_wasi::admission` contains types and functions to construct a `AdmissionReview` easily.
-```
+```rust
 use k8s_wasi::admission::*;
 ```
 
