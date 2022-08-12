@@ -4,10 +4,10 @@ use k8s_wasi::Authenticator;
 
 struct MagicAuthenticator {}
 
-impl Authenticator<()> for MagicAuthenticator {
+impl Authenticator<Option<()>> for MagicAuthenticator {
     fn authenticate(
         tr: TokenReview,
-        _settings: (),
+        _settings: Option<()>,
     ) -> Result<TokenReview, Box<dyn std::error::Error>> {
         let token = get_token(tr)?;
 

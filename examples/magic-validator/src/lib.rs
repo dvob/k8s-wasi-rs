@@ -4,10 +4,10 @@ use k8s_wasi::Admiter;
 
 struct MagicValidator {}
 
-impl Admiter<()> for MagicValidator {
+impl Admiter<Option<()>> for MagicValidator {
     fn admit(
         ar: AdmissionReview,
-        _settings: (),
+        _settings: Option<()>,
     ) -> Result<AdmissionReview, Box<dyn std::error::Error>> {
         let mut request = ar.get_request()?;
 

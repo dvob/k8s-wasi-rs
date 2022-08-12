@@ -4,10 +4,10 @@ use k8s_wasi::Authorizer;
 
 struct MagicAuthorizer {}
 
-impl Authorizer<()> for MagicAuthorizer {
+impl Authorizer<Option<()>> for MagicAuthorizer {
     fn authorize(
         sar: SubjectAccessReview,
-        _settings: (),
+        _settings: Option<()>,
     ) -> Result<SubjectAccessReview, Box<dyn std::error::Error>> {
         let spec = sar.spec;
 
