@@ -1,10 +1,10 @@
-use std::error::Error;
 use k8s_openapi::api::authentication::v1::{TokenReview, TokenReviewStatus, UserInfo};
+use std::error::Error;
 
 pub fn get_token(tr: TokenReview) -> Result<String, Box<dyn Error>> {
     match tr.spec.token {
         Some(token) => Ok(token),
-        None => Err("no token in request".into())
+        None => Err("no token in request".into()),
     }
 }
 
@@ -15,7 +15,7 @@ pub fn response_from_status(status: TokenReviewStatus) -> TokenReview {
 }
 
 pub fn error(message: String) -> TokenReviewStatus {
-    TokenReviewStatus{
+    TokenReviewStatus {
         audiences: None,
         authenticated: Some(false),
         user: None,
@@ -24,7 +24,7 @@ pub fn error(message: String) -> TokenReviewStatus {
 }
 
 pub fn reject() -> TokenReviewStatus {
-    TokenReviewStatus{
+    TokenReviewStatus {
         audiences: None,
         authenticated: Some(false),
         user: None,
@@ -33,10 +33,10 @@ pub fn reject() -> TokenReviewStatus {
 }
 
 pub fn authenticate(uid: String, username: String, groups: Vec<String>) -> TokenReviewStatus {
-    TokenReviewStatus{
+    TokenReviewStatus {
         audiences: None,
         authenticated: Some(true),
-        user: Some(UserInfo{
+        user: Some(UserInfo {
             uid: Some(uid),
             username: Some(username),
             groups: Some(groups),

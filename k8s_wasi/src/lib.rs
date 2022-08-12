@@ -4,8 +4,8 @@ pub mod subject_access_review;
 
 pub mod token_review;
 
-use k8s_openapi::api::{authentication::v1::TokenReview, authorization::v1::SubjectAccessReview};
 use admission::AdmissionReview;
+use k8s_openapi::api::{authentication::v1::TokenReview, authorization::v1::SubjectAccessReview};
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
@@ -59,7 +59,7 @@ where
     }
     pub fn raw_run(&self, input: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
         let response = match serde_json::from_slice::<Request<I, S>>(input) {
-            Err(err) => Response{
+            Err(err) => Response {
                 response: None,
                 error: Some(err.to_string()),
             },

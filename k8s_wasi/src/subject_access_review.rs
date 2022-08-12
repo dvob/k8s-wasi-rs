@@ -6,13 +6,16 @@ pub fn response_from_status(status: SubjectAccessReviewStatus) -> SubjectAccessR
     sar
 }
 
-pub fn with_reason(mut status: SubjectAccessReviewStatus, reason: String) -> SubjectAccessReviewStatus {
+pub fn with_reason(
+    mut status: SubjectAccessReviewStatus,
+    reason: String,
+) -> SubjectAccessReviewStatus {
     status.reason = Some(reason);
     status
 }
 
 pub fn allow() -> SubjectAccessReviewStatus {
-    SubjectAccessReviewStatus{
+    SubjectAccessReviewStatus {
         allowed: true,
         denied: Some(false),
         evaluation_error: None,
@@ -21,7 +24,7 @@ pub fn allow() -> SubjectAccessReviewStatus {
 }
 
 pub fn reject() -> SubjectAccessReviewStatus {
-    SubjectAccessReviewStatus{
+    SubjectAccessReviewStatus {
         allowed: false,
         denied: Some(false),
         evaluation_error: None,

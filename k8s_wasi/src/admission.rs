@@ -1,7 +1,7 @@
-use std::error::Error;
-use std::collections::BTreeMap;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::Status;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::error::Error;
 
 // we have to define our own AdmissionReview becuase its not included in the
 // generated OpenAPI types of Kubernetes and hence not available in the
@@ -28,7 +28,7 @@ impl Default for AdmissionReview {
             kind: Some(String::from("AdmissionReview")),
             api_version: Some(String::from("admission.k8s.io/v1")),
             request: Default::default(),
-            response: Default::default()
+            response: Default::default(),
         }
     }
 }
@@ -45,7 +45,10 @@ impl AdmissionReview {
     }
 
     pub fn mutate<T: Serialize>(uid: String, mutated_object: T) -> Result<Self, Box<dyn Error>> {
-        Ok(Self::with_response(AdmissionResponse::mutate(uid, mutated_object)?))
+        Ok(Self::with_response(AdmissionResponse::mutate(
+            uid,
+            mutated_object,
+        )?))
     }
 
     pub fn reject(uid: String) -> Self {
@@ -59,7 +62,7 @@ impl AdmissionReview {
     pub fn get_request(self) -> Result<AdmissionRequest, Box<dyn Error>> {
         match self.request {
             Some(request) => Ok(request),
-            None => Err("request not set in AdmissionReview".into())
+            None => Err("request not set in AdmissionReview".into()),
         }
     }
 }
@@ -90,13 +93,10 @@ impl AdmissionRequest {
         let object = std::mem::replace(&mut self.object, None);
         match object {
             None => Err("no object in admission request".into()),
-            Some(object) => {
-                Ok(serde_json::from_value(object.0)?)
-            }
+            Some(object) => Ok(serde_json::from_value(object.0)?),
         }
     }
 }
-
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(default)]
@@ -107,7 +107,7 @@ pub struct AdmissionResponse {
     pub result: Option<Status>,
     pub patch: Option<String>,
     pub patch_type: Option<String>,
-    pub audit_annotations:  Option<BTreeMap<String, String>>,
+    pub audit_annotations: Option<BTreeMap<String, String>>,
     pub warnings: Option<Vec<String>>,
 }
 
